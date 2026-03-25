@@ -17,6 +17,7 @@ var (
 	promptStyle       = lipgloss.NewStyle().Foreground(promptBorderColor)
 	promptBorderStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(promptBorderColor)
 
+	untypedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#CCCCCC"))
 	typedStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#D4A017"))
 	currentWordStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89CFF0"))
 	cursorStyle      = currentWordStyle.Underline(true)
@@ -40,10 +41,13 @@ func (m model) View() tea.View {
 
 func (m model) printInput() string {
 	inputBorderStyle = inputBorderStyle.Width(m.width)
-	currentWord := m.input[strings.LastIndex(m.input, " ")+1:] + m.typoSequence
+	currentWord := ""
+	if len(m.input) < len(m.currentPrompt) {
+		currentWord = m.input[strings.LastIndex(m.input, " ")+1:] + m.typoSequence
+	}
 	padding := max(m.width-2-len(currentWord), 0)
-	screen := inputBorderStyle.Render(currentWord+strings.Repeat(" ", padding)) + "\n"
-	return addBorderTitle(screen, "Input", inputStyle)
+	screen := inputBorderStyle.Render(untypedStyle.Render(currentWord)+strings.Repeat(" ", padding)) + "\n"
+	return addBorderTitle(screen, "Input", inputStyle, inputStyle)
 }
 
 func (m model) printPrompt(inputHeight int) string {
@@ -95,7 +99,7 @@ func (m model) printPrompt(inputHeight int) string {
 		case i < wordEnd:
 			content += activeWordStyle.Render(string(ch))
 		default:
-			content += string(ch)
+			content += untypedStyle.Render(string(ch))
 		}
 	}
 	if wordEnd == len(prompt) {
@@ -104,11 +108,11 @@ func (m model) printPrompt(inputHeight int) string {
 		}
 	}
 
-	return addBorderTitle(promptBorderStyle.Render(content), "Prompt", promptStyle)
+	return addBorderTitle(promptBorderStyle.Render(content), "Prompt", promptStyle, promptStyle)
 }
 
 // Utility function to add title text to rendered style
-func addBorderTitle(renderedText string, title string, renderedTextStyle lipgloss.Style) string {
+func addBorderTitle(renderedText string, title string, borderStyle lipgloss.Style, titleStyle lipgloss.Style) string {
 	lines := strings.Split(renderedText, "\n")
 	if len(lines) == 0 {
 		return renderedText
@@ -130,8 +134,8 @@ func addBorderTitle(renderedText string, title string, renderedTextStyle lipglos
 	prefix := string(runes[:1])
 	suffix := string(runes[1+titleWidth:])
 
-	// Re-apply the renderedTextStyle (this style should only be foreground color) to the non-title parts
-	newTop := renderedTextStyle.Render(prefix) + title + renderedTextStyle.Render(suffix)
+	// Re-apply the borderStyle to the non-title parts, titleStyle to the title
+	newTop := borderStyle.Render(prefix) + titleStyle.Render(title) + borderStyle.Render(suffix)
 	lines[0] = newTop
 
 	return strings.Join(lines, "\n")
