@@ -20,6 +20,8 @@ var (
 	typedStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#D4A017"))
 	currentWordStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89CFF0"))
 	cursorStyle      = currentWordStyle.Underline(true)
+	errorStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#CC5555"))
+	errorCursorStyle = errorStyle.Underline(true)
 )
 
 func (m model) View() tea.View {
@@ -38,7 +40,7 @@ func (m model) View() tea.View {
 
 func (m model) printInput() string {
 	inputBorderStyle = inputBorderStyle.Width(m.width)
-	currentWord := m.input[strings.LastIndex(m.input, " ")+1:]
+	currentWord := m.input[strings.LastIndex(m.input, " ")+1:] + m.typoSequence
 	padding := max(m.width-2-len(currentWord), 0)
 	screen := inputBorderStyle.Render(currentWord+strings.Repeat(" ", padding)) + "\n"
 	return addBorderTitle(screen, "Input", inputStyle)
@@ -59,21 +61,46 @@ func (m model) printPrompt(inputHeight int) string {
 		}
 	}
 
+	typoRunes := []rune(m.typoSequence)
+	overflowStart := min(len(typoRunes), wordEnd-cursorPos)
+	overflow := typoRunes[overflowStart:]
+
+	activeWordStyle := currentWordStyle
+	if m.typoSequence != "" {
+		activeWordStyle = errorStyle
+	}
+
 	content := ""
 	for i, ch := range prompt {
+		if i == wordEnd {
+			for _, och := range overflow {
+				content += errorStyle.Render(string(och))
+			}
+		}
 		switch {
 		case i < cursorPos:
-			content += typedStyle.Render(string(ch))
+			if m.mistypes[i] {
+				content += errorStyle.Render(string(ch))
+			} else {
+				content += typedStyle.Render(string(ch))
+			}
 		case i == cursorPos:
 			if ch == ' ' {
 				content += string(ch)
+			} else if m.typoSequence != "" {
+				content += errorCursorStyle.Render(string(ch))
 			} else {
 				content += cursorStyle.Render(string(ch))
 			}
 		case i < wordEnd:
-			content += currentWordStyle.Render(string(ch))
+			content += activeWordStyle.Render(string(ch))
 		default:
 			content += string(ch)
+		}
+	}
+	if wordEnd == len(prompt) {
+		for _, och := range overflow {
+			content += errorStyle.Render(string(och))
 		}
 	}
 
