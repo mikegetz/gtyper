@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"math/rand"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -25,10 +26,14 @@ var promptList = func() []string {
 
 type model struct {
 	input         string
-	typoSequence     string
+	typoSequence  string
 	mistypes      map[int]bool
+	totalMistypes int
 	currentPrompt string
 	quitting      bool
+	completed     bool
+	startTime     time.Time
+	endTime       time.Time
 	// terminal dimensions
 	width  int
 	height int

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -29,6 +30,9 @@ func (m model) View() tea.View {
 	if m.quitting {
 		return tea.NewView("")
 	}
+	if m.completed {
+		return tea.NewView(m.printReport())
+	}
 	screen := ""
 	input := m.printInput()
 	inputHeight := lipgloss.Height(input)
@@ -45,7 +49,7 @@ func (m model) printInput() string {
 	if len(m.input) < len(m.currentPrompt) {
 		currentWord = m.input[strings.LastIndex(m.input, " ")+1:] + m.typoSequence
 	}
-	padding := max(m.width-2-len(currentWord), 0)
+	padding := max(m.width-2-len([]rune(currentWord)), 0)
 	screen := inputBorderStyle.Render(untypedStyle.Render(currentWord)+strings.Repeat(" ", padding)) + "\n"
 	return addBorderTitle(screen, "Input", inputStyle, inputStyle)
 }
@@ -54,7 +58,7 @@ func (m model) printPrompt(inputHeight int) string {
 	promptHeight := max(m.height-inputHeight, 0)
 	promptBorderStyle = promptBorderStyle.Width(m.width).Height(promptHeight)
 
-	cursorPos := len(m.input)
+	cursorPos := len([]rune(m.input))
 	prompt := []rune(m.currentPrompt)
 
 	wordEnd := len(prompt)
@@ -109,6 +113,37 @@ func (m model) printPrompt(inputHeight int) string {
 	}
 
 	return addBorderTitle(promptBorderStyle.Render(content), "Prompt", promptStyle, promptStyle)
+}
+
+func (m model) printReport() string {
+	promptBorderStyle = promptBorderStyle.Width(m.width).Height(m.height)
+
+	elapsed := m.endTime.Sub(m.startTime)
+	elapsedMin := elapsed.Minutes()
+	if elapsedMin < 0.0001 {
+		elapsedMin = 0.0001
+	}
+	words := float64(len([]rune(m.currentPrompt))) / 5.0
+	wpm := words / elapsedMin
+	totalPos := len([]rune(m.currentPrompt))
+	accuracy := float64(totalPos-m.totalMistypes) / float64(totalPos) * 100.0
+	if accuracy < 0 {
+		accuracy = 0
+	}
+
+	label := func(s string) string { return untypedStyle.Render(fmt.Sprintf("%-14s", s)) }
+	value := func(s string) string { return currentWordStyle.Render(s) }
+	hint := typedStyle.Render("esc  quit")
+
+	content := "\n" +
+		label("WPM") + value(fmt.Sprintf("%.0f", wpm)) + "\n" +
+		label("Accuracy") + value(fmt.Sprintf("%.1f%%", accuracy)) + "\n" +
+		label("Mistypes") + value(fmt.Sprintf("%d", m.totalMistypes)) + "\n" +
+		label("Time") + value(fmt.Sprintf("%.1fs", elapsed.Seconds())) + "\n\n" +
+		hint
+
+	rendered := promptBorderStyle.Render(content)
+	return addBorderTitle(rendered, "Results", promptStyle, promptStyle)
 }
 
 // Utility function to add title text to rendered style

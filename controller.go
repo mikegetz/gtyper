@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -15,6 +16,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 
 	case tea.KeyPressMsg:
+		if m.completed {
+			if key.Matches(msg, m.keys.Quit) {
+				m.quitting = true
+				return m, tea.Quit
+			}
+			return m, nil
+		}
 		if key.Matches(msg, m.keys.Quit) {
 			m.quitting = true
 			return m, tea.Quit
@@ -37,10 +45,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if text := msg.Key().Text; text != "" {
 				if text == string(prompt[pos]) && m.typoSequence == "" {
 					m.input += text
+					if len([]rune(m.input)) == 1 && m.startTime.IsZero() {
+						m.startTime = time.Now()
+					}
+					if len([]rune(m.input)) == len(prompt) {
+						m.endTime = time.Now()
+						m.completed = true
+					}
 				} else {
 					currentWord := m.input[strings.LastIndex(m.input, " ")+1:]
 					if len([]rune(m.typoSequence)) < m.width-2-len([]rune(currentWord)) {
 						m.typoSequence += text
+						if !m.mistypes[pos] {
+							m.totalMistypes++
+						}
 						m.mistypes[pos] = true
 					}
 				}
