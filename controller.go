@@ -7,6 +7,10 @@ import (
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+
 	case tea.KeyPressMsg:
 		if key.Matches(msg, m.keys.Quit) {
 			return m, tea.Quit
