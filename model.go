@@ -25,6 +25,8 @@ var promptList = func() []string {
 
 type model struct {
 	input         string
+	typoSequence     string
+	mistypes      map[int]bool
 	currentPrompt string
 	quitting      bool
 	// terminal dimensions
@@ -64,6 +66,7 @@ func initialModel() model {
 	m := model{
 		keys:          keys,
 		currentPrompt: promptList[rand.Intn(len(promptList))],
+		mistypes:      make(map[int]bool),
 	}
 	return m
 }
