@@ -17,14 +17,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		}
-		for i, binding := range m.keys.Letters {
-			if !key.Matches(msg, binding) {
-				continue
+		if key.Matches(msg, m.keys.Backspace) {
+			if runes := []rune(m.input); len(runes) > 0 {
+				m.input = string(runes[:len(runes)-1])
 			}
-			letter := rune('a' + i)
-			// TODO
-			m.input += string(letter)
 			break
+		}
+		prompt := []rune(m.currentPrompt)
+		if pos := len([]rune(m.input)); pos < len(prompt) {
+			if text := msg.Key().Text; text == string(prompt[pos]) {
+				m.input += text
+			}
 		}
 	}
 	return m, nil

@@ -1,13 +1,32 @@
 package main
 
 import (
+	_ "embed"
+	"math/rand"
+	"strings"
+
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 )
 
+//go:embed prompts/prompts.txt
+var promptsFile string
+
+var promptList = func() []string {
+	var list []string
+	for _, p := range strings.Split(promptsFile, "\n\n") {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			list = append(list, p)
+		}
+	}
+	return list
+}()
+
 type model struct {
-	input    string
-	quitting bool
+	input         string
+	currentPrompt string
+	quitting      bool
 	// terminal dimensions
 	width  int
 	height int
@@ -17,8 +36,8 @@ type model struct {
 }
 
 type keyMap struct {
-	Quit    key.Binding
-	Letters [26]key.Binding
+	Quit      key.Binding
+	Backspace key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
@@ -38,19 +57,13 @@ var keys = keyMap{
 		key.WithKeys("ctrl+c", "esc"),
 		key.WithHelp("ctrl+c/esc", "quit"),
 	),
-	Letters: func() [26]key.Binding {
-		var bindings [26]key.Binding
-		for i := range 26 {
-			letter := string(rune('a' + i))
-			bindings[i] = key.NewBinding(key.WithKeys(letter))
-		}
-		return bindings
-	}(),
+	Backspace: key.NewBinding(key.WithKeys("backspace")),
 }
 
 func initialModel() model {
 	m := model{
-		keys: keys,
+		keys:          keys,
+		currentPrompt: promptList[rand.Intn(len(promptList))],
 	}
 	return m
 }

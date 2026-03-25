@@ -15,7 +15,11 @@ var (
 
 	promptBorderColor = lipgloss.Color("#D4A017")
 	promptStyle       = lipgloss.NewStyle().Foreground(promptBorderColor)
-	promptBorderStyle = promptStyle.Border(lipgloss.RoundedBorder()).BorderForeground(promptBorderColor)
+	promptBorderStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(promptBorderColor)
+
+	typedStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#D4A017"))
+	currentWordStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89CFF0"))
+	cursorStyle      = currentWordStyle.Underline(true)
 )
 
 func (m model) View() tea.View {
@@ -34,23 +38,46 @@ func (m model) View() tea.View {
 
 func (m model) printInput() string {
 	inputBorderStyle = inputBorderStyle.Width(m.width)
-	screen := ""
-	padding := max(m.width-2, 0) - len(m.input)
-	screen += inputBorderStyle.Render(m.input + strings.Repeat(" ", padding))
-	screen += "\n"
+	currentWord := m.input[strings.LastIndex(m.input, " ")+1:]
+	padding := max(m.width-2-len(currentWord), 0)
+	screen := inputBorderStyle.Render(currentWord+strings.Repeat(" ", padding)) + "\n"
 	return addBorderTitle(screen, "Input", inputStyle)
 }
 
 func (m model) printPrompt(inputHeight int) string {
 	promptHeight := max(m.height-inputHeight, 0)
 	promptBorderStyle = promptBorderStyle.Width(m.width).Height(promptHeight)
-	screen := ""
-	// TODO add prompt
 
-	// pad empty space between prompt and term bottom
-	padding := max(promptHeight-lipgloss.Height(screen)-2, 0)
-	screen += promptBorderStyle.Render(strings.Repeat(strings.Repeat(" ", max(m.width-2, 0))+"\n", padding))
-	return addBorderTitle(screen, "Prompt", promptStyle)
+	cursorPos := len(m.input)
+	prompt := []rune(m.currentPrompt)
+
+	wordEnd := len(prompt)
+	for i := cursorPos; i < len(prompt); i++ {
+		if prompt[i] == ' ' {
+			wordEnd = i
+			break
+		}
+	}
+
+	content := ""
+	for i, ch := range prompt {
+		switch {
+		case i < cursorPos:
+			content += typedStyle.Render(string(ch))
+		case i == cursorPos:
+			if ch == ' ' {
+				content += string(ch)
+			} else {
+				content += cursorStyle.Render(string(ch))
+			}
+		case i < wordEnd:
+			content += currentWordStyle.Render(string(ch))
+		default:
+			content += string(ch)
+		}
+	}
+
+	return addBorderTitle(promptBorderStyle.Render(content), "Prompt", promptStyle)
 }
 
 // Utility function to add title text to rendered style
