@@ -11,7 +11,7 @@ import (
 var (
 	inputBorderColor = lipgloss.Color("#99cc00")
 	inputStyle       = lipgloss.NewStyle().Foreground(inputBorderColor)
-	inputBorderStyle = inputStyle.Border(lipgloss.RoundedBorder()).BorderForeground(inputBorderColor)
+	inputBorderStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(inputBorderColor)
 
 	promptBorderColor = lipgloss.Color("#D4A017")
 	promptStyle       = lipgloss.NewStyle().Foreground(promptBorderColor)
