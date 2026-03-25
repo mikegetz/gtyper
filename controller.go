@@ -10,9 +10,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
+		m.height = msg.Height
 
 	case tea.KeyPressMsg:
 		if key.Matches(msg, m.keys.Quit) {
+			m.quitting = true
 			return m, tea.Quit
 		}
 		for i, binding := range m.keys.Letters {

@@ -6,7 +6,8 @@ import (
 )
 
 type model struct {
-	input string
+	input    string
+	quitting bool
 	// terminal dimensions
 	width  int
 	height int
