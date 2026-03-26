@@ -26,6 +26,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.reportView < 1 {
 					m.reportView++
 				}
+			case key.Matches(msg, m.keys.Restart):
+				fresh := initialModel()
+				fresh.width = m.width
+				fresh.height = m.height
+				return fresh, nil
 			case key.Matches(msg, m.keys.Quit):
 				m.quitting = true
 				return m, tea.Quit
