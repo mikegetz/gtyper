@@ -2,8 +2,24 @@
 [ttyper](https://github.com/max-niederman/ttyper) inspired clone
 
 
-![2026-03-25 20-31-42](https://github.com/user-attachments/assets/4113ec0f-3a41-4132-97f6-e2fcafc05e2a)
-<img width="1780" height="674" alt="2026-03-25-203248_hyprshot" src="https://github.com/user-attachments/assets/f347a551-5b47-437c-a32a-2b55c47f26eb" />
+![gtyper_demo](https://github.com/user-attachments/assets/c9ada2ca-bd07-40af-8ac6-3e25df7a870b)
+
+## Report
+
+### Keypresses Report View
+<img width="1746" height="672" alt="2026-03-25-224508_hyprshot" src="https://github.com/user-attachments/assets/123d2896-515f-435b-a08d-a777f1dcbfce" />
+
+### Time Series Report View
+<img width="1742" height="672" alt="2026-03-25-224538_hyprshot" src="https://github.com/user-attachments/assets/308213e9-b598-4207-978a-c320877f7a11" />
+
+At the end of each session you'll see:
+
+- **Adjusted WPM** — Correct characters typed divided by 5, divided by elapsed minutes.
+- **Raw WPM** — All keypresses (including errors) divided by 5, divided by elapsed minutes.
+- **Accuracy** — Correct keypresses as a percentage of total keypresses.
+- **Correct Keys** — Correct keypresses out of total keypresses (e.g. `272/284`).
+- **Worst Keys** — Up to 5 characters with the lowest per-key accuracy.
+- **Chart** — Rolling 10-keypress WPM plotted over the course of the session.
 
 ## Install
 
@@ -26,17 +42,6 @@ gtyper
 ```
 
 Type the displayed prompt as accurately and quickly as possible. When finished, a results screen shows your stats. Press `esc` to quit.
-
-## Report
-
-At the end of each session you'll see:
-
-- **Adjusted WPM** — Correct characters typed divided by 5, divided by elapsed minutes.
-- **Raw WPM** — All keypresses (including errors) divided by 5, divided by elapsed minutes.
-- **Accuracy** — Correct keypresses as a percentage of total keypresses.
-- **Correct Keys** — Correct keypresses out of total keypresses (e.g. `272/284`).
-- **Worst Keys** — Up to 5 characters with the lowest per-key accuracy.
-- **Chart** — Rolling 10-keypress WPM plotted over the course of the session.
 
 ## Prompts
 
