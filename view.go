@@ -23,6 +23,7 @@ var (
 	promptStyle       = lipgloss.NewStyle().Foreground(promptBorderColor)
 	promptBorderStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(promptBorderColor)
 
+	versionStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#555555"))
 	untypedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#CCCCCC"))
 	typedStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#D4A017"))
 	currentWordStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89CFF0"))
@@ -44,6 +45,7 @@ func (m model) View() tea.View {
 
 	screen += input
 	screen += m.printPrompt(inputHeight)
+	screen += "\n" + versionStyle.Render(Version)
 
 	return tea.NewView(screen)
 }
@@ -60,7 +62,7 @@ func (m model) printInput() string {
 }
 
 func (m model) printPrompt(inputHeight int) string {
-	promptHeight := max(m.height-inputHeight-1, 0)
+	promptHeight := max(m.height-inputHeight-2, 0)
 	promptBorderStyle = promptBorderStyle.Width(m.width).Height(promptHeight)
 
 	cursorPos := len([]rune(m.input))
