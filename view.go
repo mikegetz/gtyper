@@ -250,7 +250,7 @@ func (m model) printReport() string {
 
 		if m.reportView == 0 {
 			wlc := wavelinechart.New(chartW, chartH)
-			wlc.SetStyles(runes.LineUpHeavyDown, lipgloss.NewStyle().Foreground(inputBorderColor))
+			wlc.SetStyles(runes.ArcLineStyle, lipgloss.NewStyle().Foreground(inputBorderColor))
 			wlc.AxisStyle = untypedStyle
 			wlc.LabelStyle = untypedStyle
 			wlc.SetViewYRange(minY-yPadding, maxY+yPadding)
