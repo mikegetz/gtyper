@@ -52,6 +52,7 @@ type model struct {
 	completed     bool
 	startTime     time.Time
 	endTime       time.Time
+	reportView    int
 	// terminal dimensions
 	width  int
 	height int
@@ -63,6 +64,8 @@ type model struct {
 type keyMap struct {
 	Quit      key.Binding
 	Backspace key.Binding
+	Left      key.Binding
+	Right     key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
@@ -83,6 +86,8 @@ var keys = keyMap{
 		key.WithHelp("ctrl+c/esc", "quit"),
 	),
 	Backspace: key.NewBinding(key.WithKeys("backspace")),
+	Left:      key.NewBinding(key.WithKeys("left")),
+	Right:     key.NewBinding(key.WithKeys("right")),
 }
 
 func initialModel() model {

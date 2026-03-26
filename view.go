@@ -7,6 +7,7 @@ import (
 
 	"github.com/NimbleMarkets/ntcharts/v2/canvas"
 	"github.com/NimbleMarkets/ntcharts/v2/canvas/runes"
+	"github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
 	"github.com/NimbleMarkets/ntcharts/v2/linechart/wavelinechart"
 
 	tea "charm.land/bubbletea/v2"
@@ -219,14 +220,16 @@ func (m model) printReport() string {
 	// and produce unreliable WPM spikes that blow out the Y scale.
 	const rollingWindow = 10
 	stableHistory := m.wpmHistory
+	stableKeytimes := m.keypressTimes
 	if len(stableHistory) > rollingWindow-1 {
 		stableHistory = stableHistory[rollingWindow-1:]
+		stableKeytimes = stableKeytimes[rollingWindow-1:]
 	}
 
 	chartSection := ""
 	chartH := m.height - lipgloss.Height(topRow) - 5 // -1 "Chart", -1 yLabel, -1 xLabel, -2 hint+newline
 	if chartH > 3 && len(stableHistory) > 1 {
-		chartW := m.width - 2
+		chartW := m.width - 6 // -4 for 2-char side arrows, -2 for outer padding
 
 		minY, maxY := stableHistory[0], stableHistory[0]
 		for _, v := range stableHistory[1:] {
@@ -237,29 +240,71 @@ func (m model) printReport() string {
 				maxY = v
 			}
 		}
-		padding := (maxY - minY) * 0.15
-		if padding < 5 {
-			padding = 5
+		yPadding := (maxY - minY) * 0.15
+		if yPadding < 5 {
+			yPadding = 5
 		}
 
-		wlc := wavelinechart.New(chartW, chartH)
-		wlc.SetStyles(runes.LineUpHeavyDown, lipgloss.NewStyle().Foreground(inputBorderColor))
-		wlc.AxisStyle = untypedStyle
-		wlc.LabelStyle = untypedStyle
-		wlc.SetViewYRange(minY-padding, maxY+padding)
-		for i, v := range stableHistory {
-			wlc.Plot(canvas.Float64Point{X: float64(i), Y: v})
+		var chartStr, yLabel, xLabel string
+		yAxisOffset := len(fmt.Sprintf("%.0f", maxY+yPadding))
+
+		if m.reportView == 0 {
+			wlc := wavelinechart.New(chartW, chartH)
+			wlc.SetStyles(runes.LineUpHeavyDown, lipgloss.NewStyle().Foreground(inputBorderColor))
+			wlc.AxisStyle = untypedStyle
+			wlc.LabelStyle = untypedStyle
+			wlc.SetViewYRange(minY-yPadding, maxY+yPadding)
+			for i, v := range stableHistory {
+				wlc.Plot(canvas.Float64Point{X: float64(i), Y: v})
+			}
+			wlc.Draw()
+			chartStr = wlc.View()
+			yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
+			xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
+				Render(untypedStyle.Render("Keypresses"))
+		} else {
+			tslc := timeserieslinechart.New(chartW, chartH,
+				timeserieslinechart.WithYRange(minY-yPadding, maxY+yPadding),
+				timeserieslinechart.WithStyle(lipgloss.NewStyle().Foreground(inputBorderColor)),
+				timeserieslinechart.WithAxesStyles(untypedStyle, untypedStyle),
+				timeserieslinechart.WithXLabelFormatter(timeserieslinechart.HourTimeLabelFormatter()),
+				timeserieslinechart.WithTimeRange(stableKeytimes[0], stableKeytimes[len(stableKeytimes)-1]),
+			)
+			for i, v := range stableHistory {
+				tslc.Push(timeserieslinechart.TimePoint{Time: stableKeytimes[i], Value: v})
+			}
+			tslc.Draw()
+			chartStr = tslc.View()
+			yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
+			xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
+				Render(untypedStyle.Render("Time"))
 		}
-		wlc.Draw()
-		yAxisOffset := len(fmt.Sprintf("%.0f", maxY+padding))
-		yLabel := strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
-		xLabel := lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
-			Render(untypedStyle.Render("Keypresses"))
-		chartSection = "\n" + promptStyle.Render("Chart") + "\n" +
-			yLabel + "\n" + wlc.View() + "\n" + xLabel
+
+		// Inject left/right arrow indicators at vertical midpoint of chart
+		chartLines := strings.Split(chartStr, "\n")
+		mid := len(chartLines) / 2
+		for i, line := range chartLines {
+			leftPad := "  "
+			rightPad := "  "
+			if i == mid {
+				if m.reportView == 1 {
+					leftPad = untypedStyle.Render("←") + " "
+				}
+				if m.reportView == 0 {
+					rightPad = " " + untypedStyle.Render("→")
+				}
+			}
+			chartLines[i] = leftPad + line + rightPad
+		}
+		paddedChart := strings.Join(chartLines, "\n")
+
+		viewNames := []string{"rolling avg", "time series"}
+		chartTitle := "Chart  (" + viewNames[m.reportView] + ")"
+		chartSection = "\n" + promptStyle.Render(chartTitle) + "\n" +
+			strings.Repeat(" ", 2) + yLabel + "\n" + paddedChart + "\n" + strings.Repeat(" ", 2) + xLabel
 	}
 
-	hint := "\n" + typedStyle.Italic(true).Render("Press 'esc' to quit")
+	hint := "\n" + typedStyle.Italic(true).Render("Press ← → to switch chart or 'esc' quit")
 	return topRow + chartSection + hint
 }
 
