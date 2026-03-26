@@ -66,6 +66,7 @@ type keyMap struct {
 	Backspace key.Binding
 	Left      key.Binding
 	Right     key.Binding
+	Restart   key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
@@ -88,6 +89,7 @@ var keys = keyMap{
 	Backspace: key.NewBinding(key.WithKeys("backspace")),
 	Left:      key.NewBinding(key.WithKeys("left")),
 	Right:     key.NewBinding(key.WithKeys("right")),
+	Restart:   key.NewBinding(key.WithKeys("r")),
 }
 
 func initialModel() model {

@@ -304,7 +304,7 @@ func (m model) printReport() string {
 			strings.Repeat(" ", 2) + yLabel + "\n" + paddedChart + "\n" + strings.Repeat(" ", 2) + xLabel
 	}
 
-	hint := "\n" + typedStyle.Italic(true).Render("Press ← → to switch chart or 'esc' quit")
+	hint := "\n" + typedStyle.Italic(true).Render("Press ← → to switch chart, 'r' to restart or 'esc' quit")
 	return topRow + chartSection + hint
 }
 
