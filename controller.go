@@ -17,7 +17,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		if m.completed {
-			if key.Matches(msg, m.keys.Quit) {
+			switch {
+			case key.Matches(msg, m.keys.Left):
+				if m.reportView > 0 {
+					m.reportView--
+				}
+			case key.Matches(msg, m.keys.Right):
+				if m.reportView < 1 {
+					m.reportView++
+				}
+			case key.Matches(msg, m.keys.Quit):
 				m.quitting = true
 				return m, tea.Quit
 			}
