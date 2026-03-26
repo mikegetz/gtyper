@@ -7,10 +7,11 @@
 ## Report
 
 ### Keypresses Report View
-<img width="1746" height="672" alt="2026-03-25-224508_hyprshot" src="https://github.com/user-attachments/assets/123d2896-515f-435b-a08d-a777f1dcbfce" />
+<img width="1748" height="672" alt="2026-03-25-233845_hyprshot" src="https://github.com/user-attachments/assets/ef706c84-aaa7-474a-bed5-ae647cacd716" />
+
 
 ### Time Series Report View
-<img width="1742" height="672" alt="2026-03-25-224538_hyprshot" src="https://github.com/user-attachments/assets/308213e9-b598-4207-978a-c320877f7a11" />
+<img width="1746" height="667" alt="2026-03-25-233901_hyprshot" src="https://github.com/user-attachments/assets/130caa19-6e23-461b-85bc-b2ed054d5b22" />
 
 At the end of each session you'll see:
 
