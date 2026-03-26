@@ -1,6 +1,10 @@
 # gtyper
 [ttyper](https://github.com/max-niederman/ttyper) inspired clone
 
+
+![2026-03-25 20-31-42](https://github.com/user-attachments/assets/4113ec0f-3a41-4132-97f6-e2fcafc05e2a)
+<img width="1780" height="674" alt="2026-03-25-203248_hyprshot" src="https://github.com/user-attachments/assets/f347a551-5b47-437c-a32a-2b55c47f26eb" />
+
 ## Install
 
 ### Shell
