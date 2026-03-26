@@ -147,7 +147,9 @@ func (m model) printReport() string {
 
 	// Overview panel (left half)
 	halfW := m.width / 2
+	promptSource := strings.TrimLeft(m.currentSource, "—- \t")
 	overviewContent := "\n" +
+		label("Prompt:") + value(promptSource) + "\n\n" +
 		label("Adjusted WPM:") + value(fmt.Sprintf("%.1f", adjWPM)) + "\n" +
 		label("Accuracy:") + value(fmt.Sprintf("%.1f%%", accuracy)) + "\n" +
 		label("Raw WPM:") + value(fmt.Sprintf("%.1f", rawWPM)) + "\n" +
