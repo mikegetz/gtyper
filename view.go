@@ -221,7 +221,7 @@ func (m model) printReport() string {
 	}
 
 	chartSection := ""
-	chartH := m.height - lipgloss.Height(topRow) - 3 // -1 for "Chart" label, -2 for hint+newline
+	chartH := m.height - lipgloss.Height(topRow) - 5 // -1 "Chart", -1 yLabel, -1 xLabel, -2 hint+newline
 	if chartH > 3 && len(stableHistory) > 1 {
 		chartW := m.width - 2
 
@@ -240,7 +240,7 @@ func (m model) printReport() string {
 		}
 
 		wlc := wavelinechart.New(chartW, chartH)
-		wlc.SetStyles(runes.ArcLineStyle, lipgloss.NewStyle().Foreground(inputBorderColor))
+		wlc.SetStyles(runes.LineUpHeavyDown, lipgloss.NewStyle().Foreground(inputBorderColor))
 		wlc.AxisStyle = untypedStyle
 		wlc.LabelStyle = untypedStyle
 		wlc.SetViewYRange(minY-padding, maxY+padding)
@@ -248,10 +248,15 @@ func (m model) printReport() string {
 			wlc.Plot(canvas.Float64Point{X: float64(i), Y: v})
 		}
 		wlc.Draw()
-		chartSection = "\n" + promptStyle.Render("Chart") + "\n" + wlc.View()
+		yAxisOffset := len(fmt.Sprintf("%.0f", maxY+padding))
+		yLabel := strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
+		xLabel := lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
+			Render(untypedStyle.Render("Keypresses"))
+		chartSection = "\n" + promptStyle.Render("Chart") + "\n" +
+			yLabel + "\n" + wlc.View() + "\n" + xLabel
 	}
 
-	hint := "\n" + typedStyle.Italic(true).Render("Press \"esc\" to exit")
+	hint := "\n" + typedStyle.Italic(true).Render("Press 'esc' to quit")
 	return topRow + chartSection + hint
 }
 
