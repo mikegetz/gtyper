@@ -47,3 +47,15 @@ Opening passages from classic novels:
 - *Pride and Prejudice* — Jane Austen
 - *Neuromancer* — William Gibson
 - *The Hobbit* — J.R.R. Tolkien
+- *1984* — George Orwell
+- *The Great Gatsby* — F. Scott Fitzgerald
+- *Anna Karenina* — Leo Tolstoy
+- *The Old Man and the Sea* — Ernest Hemingway
+- *East of Eden* — John Steinbeck
+- *Ulysses* — James Joyce
+- *To Kill a Mockingbird* — Harper Lee
+- *The Sun Also Rises* — Ernest Hemingway
+- *Brave New World* — Aldous Huxley
+- *One Hundred Years of Solitude* — Gabriel Garcia Marquez
+- *The Trial* — Franz Kafka
+- *The Color Purple* — Alice Walker

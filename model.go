@@ -13,13 +13,26 @@ import (
 //go:embed prompts/prompts.txt
 var promptsFile string
 
-var promptList = func() []string {
-	var list []string
-	for _, p := range strings.Split(promptsFile, "\n\n") {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			list = append(list, p)
+type prompt struct {
+	text   string
+	source string
+}
+
+var promptList = func() []prompt {
+	var list []prompt
+	for _, block := range strings.Split(promptsFile, "\n\n") {
+		block = strings.TrimSpace(block)
+		if block == "" {
+			continue
 		}
+		idx := strings.LastIndex(block, "\n")
+		if idx == -1 {
+			continue
+		}
+		list = append(list, prompt{
+			text:   strings.TrimSpace(block[:idx]),
+			source: strings.TrimSpace(block[idx+1:]),
+		})
 	}
 	return list
 }()
@@ -34,6 +47,7 @@ type model struct {
 	keyErrors      map[rune]int
 	wpmHistory     []float64
 	currentPrompt string
+	currentSource string
 	quitting      bool
 	completed     bool
 	startTime     time.Time
@@ -72,9 +86,11 @@ var keys = keyMap{
 }
 
 func initialModel() model {
+	p := promptList[rand.Intn(len(promptList))]
 	m := model{
 		keys:          keys,
-		currentPrompt: promptList[rand.Intn(len(promptList))],
+		currentPrompt: p.text,
+		currentSource: p.source,
 		mistypes:      make(map[int]bool),
 		keyErrors:     make(map[rune]int),
 	}

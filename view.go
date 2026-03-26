@@ -60,7 +60,7 @@ func (m model) printInput() string {
 }
 
 func (m model) printPrompt(inputHeight int) string {
-	promptHeight := max(m.height-inputHeight, 0)
+	promptHeight := max(m.height-inputHeight-1, 0)
 	promptBorderStyle = promptBorderStyle.Width(m.width).Height(promptHeight)
 
 	cursorPos := len([]rune(m.input))
@@ -117,6 +117,7 @@ func (m model) printPrompt(inputHeight int) string {
 		}
 	}
 
+	content += "\n\n" + untypedStyle.Italic(true).Render(m.currentSource)
 	return addBorderTitle(promptBorderStyle.Render(content), "Prompt", promptStyle, promptStyle)
 }
 
