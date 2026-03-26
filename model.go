@@ -27,8 +27,12 @@ var promptList = func() []string {
 type model struct {
 	input         string
 	typoSequence  string
-	mistypes      map[int]bool
-	totalMistypes int
+	mistypes       map[int]bool
+	totalMistypes  int
+	keypressTimes  []time.Time
+	totalKeypresses int
+	keyErrors      map[rune]int
+	wpmHistory     []float64
 	currentPrompt string
 	quitting      bool
 	completed     bool
@@ -72,6 +76,7 @@ func initialModel() model {
 		keys:          keys,
 		currentPrompt: promptList[rand.Intn(len(promptList))],
 		mistypes:      make(map[int]bool),
+		keyErrors:     make(map[rune]int),
 	}
 	return m
 }

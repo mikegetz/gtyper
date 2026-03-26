@@ -45,20 +45,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if text := msg.Key().Text; text != "" {
 				if text == string(prompt[pos]) && m.typoSequence == "" {
 					m.input += text
+					m.keypressTimes = append(m.keypressTimes, time.Now())
+					m.totalKeypresses++
 					if len([]rune(m.input)) == 1 && m.startTime.IsZero() {
-						m.startTime = time.Now()
+						m.startTime = m.keypressTimes[0]
 					}
 					if len([]rune(m.input)) == len(prompt) {
 						m.endTime = time.Now()
 						m.completed = true
+						m.wpmHistory = computeWPMHistory(m.keypressTimes)
 					}
 				} else {
 					currentWord := m.input[strings.LastIndex(m.input, " ")+1:]
 					if len([]rune(m.typoSequence)) < m.width-2-len([]rune(currentWord)) {
 						m.typoSequence += text
+						m.totalKeypresses++
 						if !m.mistypes[pos] {
 							m.totalMistypes++
 						}
+						m.keyErrors[prompt[pos]]++
 						m.mistypes[pos] = true
 					}
 				}
@@ -66,4 +71,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+func computeWPMHistory(times []time.Time) []float64 {
+	const window = 10
+	hist := make([]float64, len(times))
+	for i := range times {
+		start := max(i-window+1, 0)
+		var elapsed float64
+		if i == start {
+			elapsed = 0.0001
+		} else {
+			elapsed = times[i].Sub(times[start]).Minutes()
+			if elapsed < 0.0001 {
+				elapsed = 0.0001
+			}
+		}
+		chars := float64(i - start + 1)
+		hist[i] = (chars / 5.0) / elapsed
+	}
+	return hist
 }
