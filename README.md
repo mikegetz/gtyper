@@ -44,6 +44,28 @@ gtyper
 
 Type the displayed prompt as accurately and quickly as possible. When finished, a results screen shows your stats. Press `esc` to quit.
 
+## Custom Prompts
+
+You can supply your own prompts via a config file at `~/.config/gtyper/config.json` (or `$XDG_CONFIG_HOME/gtyper/config.json`). When present and valid, your prompts replace the built-in set entirely. If the file is missing or malformed, gtyper falls back to the built-in prompts silently.
+
+**Format** — a JSON array of objects:
+
+```json
+[
+  {
+    "content": "The sky above the port was the color of television, tuned to a dead channel.",
+    "citation": "— Neuromancer, William Gibson"
+  },
+  {
+    "content": "It was a bright cold day in April, and the clocks were striking thirteen.",
+    "citation": "— 1984, George Orwell"
+  }
+]
+```
+
+- `content` — required. The text to type.
+- `citation` — optional. Shown in the report overview as the prompt source.
+
 ## Prompts
 
 Opening passages from classic novels:
