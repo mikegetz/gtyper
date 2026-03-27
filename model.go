@@ -93,7 +93,11 @@ var keys = keyMap{
 }
 
 func initialModel() model {
-	p := promptList[rand.Intn(len(promptList))]
+	prompts := loadUserPrompts()
+	if prompts == nil {
+		prompts = promptList
+	}
+	p := prompts[rand.Intn(len(prompts))]
 	m := model{
 		keys:          keys,
 		currentPrompt: p.text,
