@@ -46,7 +46,11 @@ func (m model) View() tea.View {
 
 	screen += input
 	screen += m.printPrompt(inputHeight)
-	screen += "\n" + versionStyle.Render(Version)
+	promptSource := "gtyper prompts"
+	if m.usingUserConfig {
+		promptSource = "~/.config/gtyper/config.json"
+	}
+	screen += "\n" + versionStyle.Render(Version+"  "+promptSource)
 
 	return tea.NewView(screen)
 }
