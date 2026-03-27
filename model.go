@@ -46,8 +46,9 @@ type model struct {
 	totalKeypresses int
 	keyErrors      map[rune]int
 	wpmHistory     []float64
-	currentPrompt string
-	currentSource string
+	currentPrompt   string
+	currentSource   string
+	usingUserConfig bool
 	quitting      bool
 	completed     bool
 	startTime     time.Time
@@ -93,17 +94,20 @@ var keys = keyMap{
 }
 
 func initialModel() model {
-	prompts := loadUserPrompts()
+	userPrompts := loadUserPrompts()
+	usingUserConfig := userPrompts != nil
+	prompts := userPrompts
 	if prompts == nil {
 		prompts = promptList
 	}
 	p := prompts[rand.Intn(len(prompts))]
 	m := model{
-		keys:          keys,
-		currentPrompt: p.text,
-		currentSource: p.source,
-		mistypes:      make(map[int]bool),
-		keyErrors:     make(map[rune]int),
+		keys:            keys,
+		currentPrompt:   p.text,
+		currentSource:   p.source,
+		usingUserConfig: usingUserConfig,
+		mistypes:        make(map[int]bool),
+		keyErrors:       make(map[rune]int),
 	}
 	return m
 }
