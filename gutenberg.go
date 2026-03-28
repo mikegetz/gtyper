@@ -383,8 +383,10 @@ func fetchGutenbergPromptCmd() tea.Msg {
 // normalizeText replaces Unicode punctuation that can't be typed on a standard
 // keyboard with their closest ASCII equivalents.
 func normalizeText(s string) string {
-	// Gutenberg uses _word_ for italics in plain text — strip the underscores
+	// Gutenberg uses _word_ for italics and /# ... #/ for block annotations — strip them
 	s = strings.ReplaceAll(s, "_", "")
+	s = strings.ReplaceAll(s, "/#", "")
+	s = strings.ReplaceAll(s, "#/", "")
 
 	r := strings.NewReplacer(
 		"\u2018", "'", // left single quotation mark
