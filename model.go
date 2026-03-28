@@ -49,7 +49,10 @@ type model struct {
 	currentPrompt   string
 	currentSource   string
 	usingUserConfig bool
-	quitting      bool
+	gutenbergMode    bool
+	loading          bool
+	gutenbergFailed  bool
+	quitting        bool
 	completed     bool
 	startTime     time.Time
 	endTime       time.Time
@@ -93,7 +96,7 @@ var keys = keyMap{
 	Restart:   key.NewBinding(key.WithKeys("r")),
 }
 
-func initialModel() model {
+func initialModel(offlineMode bool) model {
 	userPrompts := loadUserPrompts()
 	usingUserConfig := userPrompts != nil
 	prompts := userPrompts
@@ -101,11 +104,14 @@ func initialModel() model {
 		prompts = promptList
 	}
 	p := prompts[rand.Intn(len(prompts))]
+	gutenbergMode := !offlineMode
 	m := model{
 		keys:            keys,
 		currentPrompt:   p.text,
 		currentSource:   p.source,
 		usingUserConfig: usingUserConfig,
+		gutenbergMode:   gutenbergMode,
+		loading:         gutenbergMode,
 		mistypes:        make(map[int]bool),
 		keyErrors:       make(map[rune]int),
 	}
@@ -113,6 +119,8 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	// nothing to init
+	if m.gutenbergMode {
+		return fetchGutenbergPromptCmd
+	}
 	return nil
 }

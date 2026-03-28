@@ -47,7 +47,11 @@ func (m model) View() tea.View {
 	screen += input
 	screen += m.printPrompt(inputHeight)
 	promptSource := "gtyper prompts"
-	if m.usingUserConfig {
+	if m.loading {
+		promptSource = "loading..."
+	} else if m.gutenbergMode && !m.gutenbergFailed {
+		promptSource = "Project Gutenberg"
+	} else if m.usingUserConfig {
 		promptSource = "~/.config/gtyper/config.json"
 	}
 	screen += "\n" + versionStyle.Render(Version+"  "+promptSource)
@@ -69,6 +73,11 @@ func (m model) printInput() string {
 func (m model) printPrompt(inputHeight int) string {
 	promptHeight := max(m.height-inputHeight-2, 0)
 	promptBorderStyle = promptBorderStyle.Width(m.width).Height(promptHeight)
+
+	if m.loading {
+		content := untypedStyle.Render("Fetching a book from Project Gutenberg...")
+		return addBorderTitle(promptBorderStyle.Render(content), "Prompt", promptStyle, promptStyle)
+	}
 
 	cursorPos := len([]rune(m.input))
 	prompt := []rune(m.currentPrompt)
