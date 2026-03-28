@@ -15,7 +15,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
+	case promptFetchedMsg:
+		m.loading = false
+		if msg.err == nil {
+			m.currentPrompt = msg.p.text
+			m.currentSource = msg.p.source
+		} else {
+			m.gutenbergFailed = true
+		}
+
 	case tea.KeyPressMsg:
+		if m.loading {
+			if key.Matches(msg, m.keys.Quit) {
+				m.quitting = true
+				return m, tea.Quit
+			}
+			return m, nil
+		}
 		if m.completed {
 			switch {
 			case key.Matches(msg, m.keys.Left):
@@ -27,10 +43,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.reportView++
 				}
 			case key.Matches(msg, m.keys.Restart):
-				fresh := initialModel()
+				fresh := initialModel(!m.gutenbergMode)
 				fresh.width = m.width
 				fresh.height = m.height
-				return fresh, nil
+				return fresh, fresh.Init()
 			case key.Matches(msg, m.keys.Quit):
 				m.quitting = true
 				return m, tea.Quit

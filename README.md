@@ -42,7 +42,13 @@ After installing, launch from your terminal:
 gtyper
 ```
 
-Type the displayed prompt as accurately and quickly as possible. When finished, a results screen shows your stats. Press `esc` to quit.
+By default, gtyper fetches a random passage from [Project Gutenberg](https://www.gutenberg.org) and uses it as the prompt. Pass `-o` to use offline prompts instead:
+
+```
+gtyper -o
+```
+
+Type the displayed prompt as accurately and quickly as possible. When finished, a results screen shows your stats. Press `r` to restart or `esc` to quit.
 
 ## Custom Prompts
 
