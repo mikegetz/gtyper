@@ -84,11 +84,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.endTime = time.Now()
 						m.completed = true
 						m.wpmHistory = computeWPMHistory(m.keypressTimes)
-						const rollingWindow = 10
-						stableLen := len(m.keypressTimes) - (rollingWindow - 1)
-						if stableLen < 200 {
-							m.reportView = 1
-						}
 					}
 				} else {
 					currentWord := m.input[strings.LastIndex(m.input, " ")+1:]
