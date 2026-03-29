@@ -264,20 +264,6 @@ func (m model) printReport() string {
 		yAxisOffset := len(fmt.Sprintf("%.0f", maxY+yPadding))
 
 		if m.reportView == 0 {
-			wlc := wavelinechart.New(chartW, chartH)
-			wlc.SetStyles(runes.ArcLineStyle, lipgloss.NewStyle().Foreground(inputBorderColor))
-			wlc.AxisStyle = untypedStyle
-			wlc.LabelStyle = untypedStyle
-			wlc.SetViewYRange(minY-yPadding, maxY+yPadding)
-			for i, v := range stableHistory {
-				wlc.Plot(canvas.Float64Point{X: float64(i), Y: v})
-			}
-			wlc.Draw()
-			chartStr = wlc.View()
-			yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
-			xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
-				Render(untypedStyle.Render("Keypresses"))
-		} else {
 			tslc := timeserieslinechart.New(chartW, chartH,
 				timeserieslinechart.WithYRange(minY-yPadding, maxY+yPadding),
 				timeserieslinechart.WithStyle(lipgloss.NewStyle().Foreground(inputBorderColor)),
@@ -293,6 +279,20 @@ func (m model) printReport() string {
 			yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
 			xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
 				Render(untypedStyle.Render("Time"))
+		} else {
+			wlc := wavelinechart.New(chartW, chartH)
+			wlc.SetStyles(runes.ArcLineStyle, lipgloss.NewStyle().Foreground(inputBorderColor))
+			wlc.AxisStyle = untypedStyle
+			wlc.LabelStyle = untypedStyle
+			wlc.SetViewYRange(minY-yPadding, maxY+yPadding)
+			for i, v := range stableHistory {
+				wlc.Plot(canvas.Float64Point{X: float64(i), Y: v})
+			}
+			wlc.Draw()
+			chartStr = wlc.View()
+			yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
+			xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
+				Render(untypedStyle.Render("Keypresses"))
 		}
 
 		// Inject left/right arrow indicators at vertical midpoint of chart
@@ -313,7 +313,7 @@ func (m model) printReport() string {
 		}
 		paddedChart := strings.Join(chartLines, "\n")
 
-		viewNames := []string{"rolling avg", "time series"}
+		viewNames := []string{"time series", "rolling avg"}
 		chartTitle := "Chart  (" + viewNames[m.reportView] + ")"
 		chartSection = "\n" + promptStyle.Render(chartTitle) + "\n" +
 			strings.Repeat(" ", 2) + yLabel + "\n" + paddedChart + "\n" + strings.Repeat(" ", 2) + xLabel
