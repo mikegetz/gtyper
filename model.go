@@ -97,10 +97,18 @@ var keys = keyMap{
 }
 
 func initialModel(offlineMode bool) model {
-	userPrompts := loadUserPrompts()
-	usingUserConfig := userPrompts != nil
+	cfg := loadUserConfig()
+	var userPrompts []prompt
+	if cfg != nil {
+		for _, p := range cfg.Prompts {
+			if strings.TrimSpace(p.Content) != "" {
+				userPrompts = append(userPrompts, prompt{text: p.Content, source: p.Citation})
+			}
+		}
+	}
+	usingUserConfig := len(userPrompts) > 0
 	prompts := userPrompts
-	if prompts == nil {
+	if len(prompts) == 0 {
 		prompts = promptList
 	}
 	p := prompts[rand.Intn(len(prompts))]
