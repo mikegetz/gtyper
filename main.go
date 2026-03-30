@@ -27,6 +27,9 @@ func main() {
 	if *usernameFlag != "" {
 		username = *usernameFlag
 	}
+	if *offlineMode {
+		scoreServer = ""
+	}
 
 	p := tea.NewProgram(initialModel(*offlineMode, scoreServer, username))
 	if _, err := p.Run(); err != nil {
