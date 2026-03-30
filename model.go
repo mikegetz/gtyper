@@ -64,9 +64,20 @@ type model struct {
 	// key map
 	keys keyMap
 
-	// leaderboard
-	scoreServer string
-	username    string
+	// score submission
+	scoreServer  string
+	username     string
+	sessionID    string
+	scoreToken   string
+	tokenExpires time.Time
+	scorePending bool
+	scoreResult  *scoreSubmittedMsg
+	scoreErr     error
+
+	// leaderboard view
+	leaderboardLoading bool
+	leaderboardEntries []leaderboardEntry
+	leaderboardErr     error
 }
 
 type keyMap struct {
