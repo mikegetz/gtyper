@@ -36,6 +36,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.leaderboardErr = msg.err
 		} else {
 			m.leaderboardEntries = msg.entries
+			m.leaderboardTable = buildLeaderboardTable(msg.entries, m.width, m.height)
 		}
 
 	case promptFetchedMsg:
@@ -59,6 +60,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if m.completed {
+			var tableCmd tea.Cmd
+			if m.reportView == 2 {
+				m.leaderboardTable, tableCmd = m.leaderboardTable.Update(msg)
+			}
 			switch {
 			case key.Matches(msg, m.keys.Left):
 				if m.reportView > 0 {
@@ -77,7 +82,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quitting = true
 				return m, tea.Quit
 			}
-			return m, nil
+			return m, tableCmd
 		}
 		if key.Matches(msg, m.keys.Quit) {
 			m.quitting = true

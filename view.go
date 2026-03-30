@@ -10,6 +10,7 @@ import (
 	"github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
 	"github.com/NimbleMarkets/ntcharts/v2/linechart/wavelinechart"
 
+	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -158,6 +159,21 @@ func (m model) printReport() string {
 	label := func(s string) string { return untypedStyle.Render(fmt.Sprintf("%-16s", s)) }
 	value := func(s string) string { return currentWordStyle.Render(s) }
 
+	// Rank value for overview
+	rankValue := ""
+	if m.scoreServer != "" {
+		switch {
+		case m.scorePending:
+			rankValue = untypedStyle.Render("submitting…")
+		case m.scoreResult != nil && m.scoreResult.eligible:
+			rankValue = value(fmt.Sprintf("#%d", m.scoreResult.rank))
+		case m.scoreResult != nil:
+			rankValue = value(fmt.Sprintf("#%d", m.scoreResult.rank)) + untypedStyle.Render(" (pending verification)")
+		case m.scoreErr != nil:
+			rankValue = errorStyle.Render("not submitted")
+		}
+	}
+
 	// Overview panel (left half)
 	halfW := m.width / 2
 	promptSource := strings.TrimLeft(m.currentSource, "—- \t")
@@ -167,6 +183,9 @@ func (m model) printReport() string {
 		label("Accuracy:") + value(fmt.Sprintf("%.1f%%", accuracy)) + "\n" +
 		label("Raw WPM:") + value(fmt.Sprintf("%.1f", rawWPM)) + "\n" +
 		label("Correct Keys:") + value(fmt.Sprintf("%d/%d", int(correctChars), m.totalKeypresses)) + "\n"
+	if rankValue != "" {
+		overviewContent += label("Rank:") + rankValue + "\n"
+	}
 	overviewStyle := promptBorderStyle.Width(halfW - 2).UnsetHeight()
 	overviewPanel := addBorderTitle(overviewStyle.Render(overviewContent), "Overview", promptStyle, promptStyle)
 	overviewH := lipgloss.Height(overviewPanel)
@@ -231,96 +250,155 @@ func (m model) printReport() string {
 
 	topRow := lipgloss.JoinHorizontal(lipgloss.Top, overviewPanel, worstPanel)
 
-	// Chart — skip the first (window-1) points; they use incomplete rolling windows
-	// and produce unreliable WPM spikes that blow out the Y scale.
-	const rollingWindow = 10
-	stableHistory := m.wpmHistory
-	stableKeytimes := m.keypressTimes
-	if len(stableHistory) > rollingWindow-1 {
-		stableHistory = stableHistory[rollingWindow-1:]
-		stableKeytimes = stableKeytimes[rollingWindow-1:]
-	}
+	bottomSection := ""
 
-	chartSection := ""
-	chartH := m.height - lipgloss.Height(topRow) - 5 // -1 "Chart", -1 yLabel, -1 xLabel, -2 hint+newline
-	if chartH > 3 && len(stableHistory) > 1 {
-		chartW := m.width - 6 // -4 for 2-char side arrows, -2 for outer padding
-
-		minY, maxY := stableHistory[0], stableHistory[0]
-		for _, v := range stableHistory[1:] {
-			if v < minY {
-				minY = v
-			}
-			if v > maxY {
-				maxY = v
-			}
+	if m.reportView == 2 {
+		// Leaderboard view
+		lbH := m.height - lipgloss.Height(topRow) - 3
+		switch {
+		case m.scoreServer == "":
+			bottomSection = "\n" + untypedStyle.Render("Configure score_server in ~/.config/gtyper/config.json to view the leaderboard.")
+		case m.leaderboardLoading:
+			bottomSection = "\n" + untypedStyle.Render("Loading leaderboard…")
+		case m.leaderboardErr != nil:
+			bottomSection = "\n" + errorStyle.Render("Could not load leaderboard.")
+		case len(m.leaderboardEntries) == 0:
+			bottomSection = "\n" + untypedStyle.Render("No scores yet.")
+		default:
+			t := buildLeaderboardTable(m.leaderboardEntries, m.width, lbH)
+			bottomSection = "\n" + t.View()
 		}
-		yPadding := (maxY - minY) * 0.15
-		if yPadding < 5 {
-			yPadding = 5
-		}
-
-		var chartStr, yLabel, xLabel string
-		yAxisOffset := len(fmt.Sprintf("%.0f", maxY+yPadding))
-
-		if m.reportView == 0 {
-			tslc := timeserieslinechart.New(chartW, chartH,
-				timeserieslinechart.WithYRange(minY-yPadding, maxY+yPadding),
-				timeserieslinechart.WithStyle(lipgloss.NewStyle().Foreground(inputBorderColor)),
-				timeserieslinechart.WithAxesStyles(untypedStyle, untypedStyle),
-				timeserieslinechart.WithXLabelFormatter(timeserieslinechart.HourTimeLabelFormatter()),
-				timeserieslinechart.WithTimeRange(stableKeytimes[0], stableKeytimes[len(stableKeytimes)-1]),
-			)
-			for i, v := range stableHistory {
-				tslc.Push(timeserieslinechart.TimePoint{Time: stableKeytimes[i], Value: v})
-			}
-			tslc.Draw()
-			chartStr = tslc.View()
-			yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
-			xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
-				Render(untypedStyle.Render("Time"))
-		} else {
-			wlc := wavelinechart.New(chartW, chartH)
-			wlc.SetStyles(runes.ArcLineStyle, lipgloss.NewStyle().Foreground(inputBorderColor))
-			wlc.AxisStyle = untypedStyle
-			wlc.LabelStyle = untypedStyle
-			wlc.SetViewYRange(minY-yPadding, maxY+yPadding)
-			for i, v := range stableHistory {
-				wlc.Plot(canvas.Float64Point{X: float64(i), Y: v})
-			}
-			wlc.Draw()
-			chartStr = wlc.View()
-			yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
-			xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
-				Render(untypedStyle.Render("Keypresses"))
+	} else {
+		// Chart — skip the first (window-1) points; they use incomplete rolling windows
+		// and produce unreliable WPM spikes that blow out the Y scale.
+		const rollingWindow = 10
+		stableHistory := m.wpmHistory
+		stableKeytimes := m.keypressTimes
+		if len(stableHistory) > rollingWindow-1 {
+			stableHistory = stableHistory[rollingWindow-1:]
+			stableKeytimes = stableKeytimes[rollingWindow-1:]
 		}
 
-		// Inject left/right arrow indicators at vertical midpoint of chart
-		chartLines := strings.Split(chartStr, "\n")
-		mid := len(chartLines) / 2
-		for i, line := range chartLines {
-			leftPad := "  "
-			rightPad := "  "
-			if i == mid {
-				if m.reportView == 1 {
-					leftPad = untypedStyle.Render("←") + " "
+		chartH := m.height - lipgloss.Height(topRow) - 5 // -1 "Chart", -1 yLabel, -1 xLabel, -2 hint+newline
+		if chartH > 3 && len(stableHistory) > 1 {
+			chartW := m.width - 6 // -4 for 2-char side arrows, -2 for outer padding
+
+			minY, maxY := stableHistory[0], stableHistory[0]
+			for _, v := range stableHistory[1:] {
+				if v < minY {
+					minY = v
 				}
-				if m.reportView == 0 {
-					rightPad = " " + untypedStyle.Render("→")
+				if v > maxY {
+					maxY = v
 				}
 			}
-			chartLines[i] = leftPad + line + rightPad
-		}
-		paddedChart := strings.Join(chartLines, "\n")
+			yPadding := (maxY - minY) * 0.15
+			if yPadding < 5 {
+				yPadding = 5
+			}
 
-		viewNames := []string{"time series", "rolling avg"}
-		chartTitle := "Chart  (" + viewNames[m.reportView] + ")"
-		chartSection = "\n" + promptStyle.Render(chartTitle) + "\n" +
-			strings.Repeat(" ", 2) + yLabel + "\n" + paddedChart + "\n" + strings.Repeat(" ", 2) + xLabel
+			var chartStr, yLabel, xLabel string
+			yAxisOffset := len(fmt.Sprintf("%.0f", maxY+yPadding))
+
+			if m.reportView == 0 {
+				tslc := timeserieslinechart.New(chartW, chartH,
+					timeserieslinechart.WithYRange(minY-yPadding, maxY+yPadding),
+					timeserieslinechart.WithStyle(lipgloss.NewStyle().Foreground(inputBorderColor)),
+					timeserieslinechart.WithAxesStyles(untypedStyle, untypedStyle),
+					timeserieslinechart.WithXLabelFormatter(timeserieslinechart.HourTimeLabelFormatter()),
+					timeserieslinechart.WithTimeRange(stableKeytimes[0], stableKeytimes[len(stableKeytimes)-1]),
+				)
+				for i, v := range stableHistory {
+					tslc.Push(timeserieslinechart.TimePoint{Time: stableKeytimes[i], Value: v})
+				}
+				tslc.Draw()
+				chartStr = tslc.View()
+				yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
+				xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
+					Render(untypedStyle.Render("Time"))
+			} else {
+				wlc := wavelinechart.New(chartW, chartH)
+				wlc.SetStyles(runes.ArcLineStyle, lipgloss.NewStyle().Foreground(inputBorderColor))
+				wlc.AxisStyle = untypedStyle
+				wlc.LabelStyle = untypedStyle
+				wlc.SetViewYRange(minY-yPadding, maxY+yPadding)
+				for i, v := range stableHistory {
+					wlc.Plot(canvas.Float64Point{X: float64(i), Y: v})
+				}
+				wlc.Draw()
+				chartStr = wlc.View()
+				yLabel = strings.Repeat(" ", yAxisOffset) + untypedStyle.Render("│ WPM (10-keypress rolling average)")
+				xLabel = lipgloss.NewStyle().Width(chartW).Align(lipgloss.Right).
+					Render(untypedStyle.Render("Keypresses"))
+			}
+
+			// Inject left/right arrow indicators at vertical midpoint of chart
+			chartLines := strings.Split(chartStr, "\n")
+			mid := len(chartLines) / 2
+			for i, line := range chartLines {
+				leftPad := "  "
+				rightPad := "  "
+				if i == mid {
+					if m.reportView == 1 {
+						leftPad = untypedStyle.Render("←") + " "
+					}
+					if m.reportView == 0 {
+						rightPad = " " + untypedStyle.Render("→")
+					}
+				}
+				chartLines[i] = leftPad + line + rightPad
+			}
+			paddedChart := strings.Join(chartLines, "\n")
+
+			viewNames := []string{"time series", "rolling avg"}
+			chartTitle := "Chart  (" + viewNames[m.reportView] + ")"
+			bottomSection = "\n" + promptStyle.Render(chartTitle) + "\n" +
+				strings.Repeat(" ", 2) + yLabel + "\n" + paddedChart + "\n" + strings.Repeat(" ", 2) + xLabel
+		}
 	}
 
-	hint := "\n" + typedStyle.Italic(true).Render("Press ← → to switch chart, 'r' to restart or 'esc' to quit")
-	return topRow + chartSection + hint
+	hint := "\n" + typedStyle.Italic(true).Render("Press ← → to switch view, 'r' to restart or 'esc' to quit")
+	return topRow + bottomSection + hint
+}
+
+func buildLeaderboardTable(entries []leaderboardEntry, width, height int) table.Model {
+	const rankW, wpmW, accW = 6, 8, 10
+	sourceW := 20
+	usernameW := width - rankW - wpmW - accW - sourceW - 5 // 5 for cell padding gaps
+	if usernameW < 10 {
+		usernameW = 10
+	}
+
+	cols := []table.Column{
+		{Title: "Rank", Width: rankW},
+		{Title: "Username", Width: usernameW},
+		{Title: "WPM", Width: wpmW},
+		{Title: "Accuracy", Width: accW},
+		{Title: "Source", Width: sourceW},
+	}
+
+	rows := make([]table.Row, len(entries))
+	for i, e := range entries {
+		rows[i] = table.Row{
+			fmt.Sprintf("#%d", e.Rank),
+			e.Username,
+			fmt.Sprintf("%.1f", e.AdjWPM),
+			fmt.Sprintf("%.1f%%", e.Accuracy),
+			e.PromptSource,
+		}
+	}
+
+	styles := table.DefaultStyles()
+	styles.Header = styles.Header.Foreground(promptBorderColor)
+	styles.Selected = styles.Selected.Foreground(inputBorderColor)
+
+	return table.New(
+		table.WithColumns(cols),
+		table.WithRows(rows),
+		table.WithHeight(height),
+		table.WithFocused(true),
+		table.WithStyles(styles),
+	)
 }
 
 // Utility function to add title text to rendered style

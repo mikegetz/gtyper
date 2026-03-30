@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
 )
 
@@ -78,6 +79,7 @@ type model struct {
 	leaderboardLoading bool
 	leaderboardEntries []leaderboardEntry
 	leaderboardErr     error
+	leaderboardTable   table.Model
 }
 
 type keyMap struct {
