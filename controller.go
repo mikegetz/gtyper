@@ -124,7 +124,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 						if m.scoreServer != "" {
 							m.leaderboardLoading = true
-							cmds = append(cmds, leaderboardCmd(m.scoreServer))
+							cmds = append(cmds, leaderboardCmd(m.scoreServer, sha256Hex(m.currentPrompt)))
 						}
 						if len(cmds) > 0 {
 							return m, tea.Batch(cmds...)

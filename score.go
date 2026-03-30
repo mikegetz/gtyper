@@ -142,10 +142,10 @@ func submitScoreCmd(serverURL string, m model) tea.Cmd {
 	}
 }
 
-// leaderboardCmd fetches the top 25 scores from /v1/leaderboard.
-func leaderboardCmd(serverURL string) tea.Cmd {
+// leaderboardCmd fetches the top 25 scores for the given prompt from /v1/leaderboard.
+func leaderboardCmd(serverURL, promptHash string) tea.Cmd {
 	return func() tea.Msg {
-		resp, err := http.Get(serverURL + "/v1/leaderboard?limit=25")
+		resp, err := http.Get(serverURL + "/v1/leaderboard?limit=25&prompt_hash=" + promptHash)
 		if err != nil {
 			return leaderboardFetchedMsg{err: err}
 		}
