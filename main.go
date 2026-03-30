@@ -17,9 +17,12 @@ func main() {
 
 	cfg := loadUserConfig()
 	scoreServer := ""
-	username := cfg.Username
+	username := generateUsername()
 	if cfg != nil {
 		scoreServer = cfg.ScoreServer
+		if cfg.Username != "" {
+			username = cfg.Username
+		}
 	}
 	if *usernameFlag != "" {
 		username = *usernameFlag
