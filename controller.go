@@ -16,18 +16,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 
 	case challengeReceivedMsg:
-		if msg.err == nil {
-			m.sessionID = msg.sessionID
-			m.scoreToken = msg.token
-			m.tokenExpires = msg.expiresAt
+		if msg.err != nil {
+			panic(msg.err)
 		}
+		m.sessionID = msg.sessionID
+		m.scoreToken = msg.token
+		m.tokenExpires = msg.expiresAt
 
 	case scoreSubmittedMsg:
 		m.scorePending = false
 		if msg.err != nil {
-			m.scoreErr = msg.err
+			panic(msg.err)
 		} else {
 			m.scoreResult = &msg
+			return m, leaderboardCmd(m.scoreServer, sha256Hex(m.currentPrompt))
 		}
 
 	case leaderboardFetchedMsg:
@@ -117,17 +119,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.endTime = time.Now()
 						m.completed = true
 						m.wpmHistory = computeWPMHistory(m.keypressTimes)
-						var cmds []tea.Cmd
 						if m.scoreServer != "" && m.sessionID != "" {
 							m.scorePending = true
-							cmds = append(cmds, submitScoreCmd(m.scoreServer, m))
-						}
-						if m.scoreServer != "" {
 							m.leaderboardLoading = true
-							cmds = append(cmds, leaderboardCmd(m.scoreServer, sha256Hex(m.currentPrompt)))
-						}
-						if len(cmds) > 0 {
-							return m, tea.Batch(cmds...)
+							return m, submitScoreCmd(m.scoreServer, m)
+						} else if m.scoreServer != "" {
+							m.leaderboardLoading = true
+							return m, leaderboardCmd(m.scoreServer, sha256Hex(m.currentPrompt))
 						}
 					}
 				} else {
