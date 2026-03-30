@@ -63,6 +63,10 @@ type model struct {
 
 	// key map
 	keys keyMap
+
+	// leaderboard
+	scoreServer string
+	username    string
 }
 
 type keyMap struct {
@@ -96,7 +100,7 @@ var keys = keyMap{
 	Restart:   key.NewBinding(key.WithKeys("r")),
 }
 
-func initialModel(offlineMode bool) model {
+func initialModel(offlineMode bool, scoreServer, username string) model {
 	cfg := loadUserConfig()
 	var userPrompts []prompt
 	if cfg != nil {
@@ -122,6 +126,8 @@ func initialModel(offlineMode bool) model {
 		loading:         gutenbergMode,
 		mistypes:        make(map[int]bool),
 		keyErrors:       make(map[rune]int),
+		scoreServer:     scoreServer,
+		username:        username,
 	}
 	return m
 }

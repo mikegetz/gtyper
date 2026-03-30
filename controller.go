@@ -43,7 +43,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.reportView++
 				}
 			case key.Matches(msg, m.keys.Restart):
-				fresh := initialModel(!m.gutenbergMode)
+				fresh := initialModel(!m.gutenbergMode, m.scoreServer, m.username)
 				fresh.width = m.width
 				fresh.height = m.height
 				return fresh, fresh.Init()
