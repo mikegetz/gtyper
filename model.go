@@ -147,5 +147,8 @@ func (m model) Init() tea.Cmd {
 	if m.gutenbergMode {
 		return fetchGutenbergPromptCmd
 	}
+	if m.scoreServer != "" && m.username != "" {
+		return challengeCmd(m.scoreServer, m.username, sha256Hex(m.currentPrompt))
+	}
 	return nil
 }

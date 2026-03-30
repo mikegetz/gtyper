@@ -15,11 +15,37 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
+	case challengeReceivedMsg:
+		if msg.err == nil {
+			m.sessionID = msg.sessionID
+			m.scoreToken = msg.token
+			m.tokenExpires = msg.expiresAt
+		}
+
+	case scoreSubmittedMsg:
+		m.scorePending = false
+		if msg.err != nil {
+			m.scoreErr = msg.err
+		} else {
+			m.scoreResult = &msg
+		}
+
+	case leaderboardFetchedMsg:
+		m.leaderboardLoading = false
+		if msg.err != nil {
+			m.leaderboardErr = msg.err
+		} else {
+			m.leaderboardEntries = msg.entries
+		}
+
 	case promptFetchedMsg:
 		m.loading = false
 		if msg.err == nil {
 			m.currentPrompt = msg.p.text
 			m.currentSource = msg.p.source
+			if m.scoreServer != "" && m.username != "" {
+				return m, challengeCmd(m.scoreServer, m.username, sha256Hex(m.currentPrompt))
+			}
 		} else {
 			m.gutenbergFailed = true
 		}
@@ -39,7 +65,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.reportView--
 				}
 			case key.Matches(msg, m.keys.Right):
-				if m.reportView < 1 {
+				if m.reportView < 2 {
 					m.reportView++
 				}
 			case key.Matches(msg, m.keys.Restart):
@@ -86,6 +112,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.endTime = time.Now()
 						m.completed = true
 						m.wpmHistory = computeWPMHistory(m.keypressTimes)
+						var cmds []tea.Cmd
+						if m.scoreServer != "" && m.sessionID != "" {
+							m.scorePending = true
+							cmds = append(cmds, submitScoreCmd(m.scoreServer, m))
+						}
+						if m.scoreServer != "" {
+							m.leaderboardLoading = true
+							cmds = append(cmds, leaderboardCmd(m.scoreServer))
+						}
+						if len(cmds) > 0 {
+							return m, tea.Batch(cmds...)
+						}
 					}
 				} else {
 					currentWord := m.input[strings.LastIndex(m.input, " ")+1:]
