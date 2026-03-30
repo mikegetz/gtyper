@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -122,7 +123,8 @@ func submitScoreCmd(serverURL string, m model) tea.Cmd {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
-			return scoreSubmittedMsg{err: fmt.Errorf("submit: HTTP %d", resp.StatusCode)}
+			body, _ := io.ReadAll(resp.Body)
+			return scoreSubmittedMsg{err: fmt.Errorf("submit: HTTP %d: %s", resp.StatusCode, body)}
 		}
 		var result struct {
 			ScoreID             string  `json:"score_id"`
