@@ -90,7 +90,7 @@ var keys = keyMap{
 		key.WithKeys("ctrl+c", "esc"),
 		key.WithHelp("ctrl+c/esc", "quit"),
 	),
-	Backspace: key.NewBinding(key.WithKeys("backspace")),
+	Backspace: key.NewBinding(key.WithKeys("backspace", "shift+backspace")),
 	Left:      key.NewBinding(key.WithKeys("left")),
 	Right:     key.NewBinding(key.WithKeys("right")),
 	Restart:   key.NewBinding(key.WithKeys("r")),

@@ -64,8 +64,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					delete(m.mistypes, len([]rune(m.input)))
 				}
 			} else if runes := []rune(m.input); len(runes) > 0 {
-				delete(m.mistypes, len(runes)-1)
-				m.input = string(runes[:len(runes)-1])
+				if runes[len(runes)-1] != ' ' {
+					delete(m.mistypes, len(runes)-1)
+					m.input = string(runes[:len(runes)-1])
+				}
 			}
 			break
 		}
