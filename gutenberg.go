@@ -336,8 +336,9 @@ var books = map[int]book{
 }
 
 type promptFetchedMsg struct {
-	p   prompt
-	err error
+	gutenbergID int
+	p           prompt
+	err         error
 }
 
 func fetchGutenbergPromptCmd() tea.Msg {
@@ -374,7 +375,7 @@ func fetchGutenbergPromptCmd() tea.Msg {
 		if err != nil {
 			continue
 		}
-		return promptFetchedMsg{p: p}
+		return promptFetchedMsg{gutenbergID: id, p: p}
 	}
 
 	return promptFetchedMsg{err: errors.New("gutenberg: failed to fetch a suitable passage after 8 attempts")}

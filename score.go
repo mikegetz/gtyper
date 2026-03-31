@@ -51,11 +51,11 @@ func sha256Hex(text string) string {
 }
 
 // challengeCmd posts to /v1/challenge and returns a challengeReceivedMsg.
-func challengeCmd(serverURL, username, promptHash string) tea.Cmd {
+func challengeCmd(serverURL, username string, gutenbergID int) tea.Cmd {
 	return func() tea.Msg {
-		body, _ := json.Marshal(map[string]string{
-			"prompt_hash": promptHash,
-			"username":    username,
+		body, _ := json.Marshal(map[string]any{
+			"gutenberg_id": gutenbergID,
+			"username":     username,
 		})
 		resp, err := http.Post(serverURL+"/v1/challenge", "application/json", bytes.NewReader(body))
 		if err != nil {
@@ -109,8 +109,7 @@ func submitScoreCmd(serverURL string, m model) tea.Cmd {
 			"session_id":        m.sessionID,
 			"token":             m.scoreToken,
 			"username":          m.username,
-			"prompt":            m.currentPrompt,
-			"prompt_source":     m.currentSource,
+			"prompt_text":       m.currentPrompt,
 			"keypress_times_ms": ms,
 			"total_keypresses":  m.totalKeypresses,
 			"client_wpm":        clientWPM,
@@ -142,6 +141,41 @@ func submitScoreCmd(serverURL string, m model) tea.Cmd {
 			eligible: result.LeaderboardEligible,
 		}
 	}
+}
+
+// injectOwnScore inserts the user's own entry into entries if it is absent.
+// Uses rank from the server response to place the entry correctly.
+// If the user's rank falls beyond the fetched slice, appends at the bottom.
+func injectOwnScore(entries []leaderboardEntry, result *scoreSubmittedMsg, username string, accuracy float64, source string) []leaderboardEntry {
+	if result == nil || !result.eligible {
+		return entries
+	}
+	for i, e := range entries {
+		if e.Username == username && e.Rank == result.rank {
+			entries[i].Username = username + " (you)"
+			return entries
+		}
+	}
+	own := leaderboardEntry{
+		Rank:         result.rank,
+		Username:     username + " (you)",
+		AdjWPM:       result.adjWPM,
+		Accuracy:     accuracy,
+		PromptSource: source,
+	}
+	out := make([]leaderboardEntry, 0, len(entries)+1)
+	inserted := false
+	for _, e := range entries {
+		if !inserted && e.Rank >= result.rank {
+			out = append(out, own)
+			inserted = true
+		}
+		out = append(out, e)
+	}
+	if !inserted {
+		out = append(out, own)
+	}
+	return out
 }
 
 // leaderboardCmd fetches the top 25 scores for the given prompt from /v1/leaderboard.

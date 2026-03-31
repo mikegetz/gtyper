@@ -49,6 +49,7 @@ type model struct {
 	wpmHistory     []float64
 	currentPrompt   string
 	currentSource   string
+	gutenbergID     int
 	usingUserConfig bool
 	gutenbergMode    bool
 	loading          bool
@@ -78,7 +79,6 @@ type model struct {
 	// leaderboard view
 	leaderboardLoading bool
 	leaderboardEntries []leaderboardEntry
-	leaderboardErr     error
 	leaderboardTable   table.Model
 }
 
@@ -148,9 +148,6 @@ func initialModel(offlineMode bool, scoreServer, username string) model {
 func (m model) Init() tea.Cmd {
 	if m.gutenbergMode {
 		return fetchGutenbergPromptCmd
-	}
-	if m.scoreServer != "" && m.username != "" {
-		return challengeCmd(m.scoreServer, m.username, sha256Hex(m.currentPrompt))
 	}
 	return nil
 }

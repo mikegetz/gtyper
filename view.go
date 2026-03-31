@@ -254,14 +254,12 @@ func (m model) printReport() string {
 
 	if m.reportView == 2 {
 		// Leaderboard view
-		lbH := m.height - lipgloss.Height(topRow) - 3
+		lbH := max(m.height-lipgloss.Height(topRow)-4, 3)
 		switch {
 		case m.scoreServer == "":
 			bottomSection = "\n" + untypedStyle.Render("Configure score_server in ~/.config/gtyper/config.json to view the leaderboard.")
 		case m.leaderboardLoading:
 			bottomSection = "\n" + untypedStyle.Render("Loading leaderboard…")
-		case m.leaderboardErr != nil:
-			bottomSection = "\n" + errorStyle.Render("Could not load leaderboard.")
 		case len(m.leaderboardEntries) == 0:
 			bottomSection = "\n" + untypedStyle.Render("No scores yet.")
 		default:
@@ -362,12 +360,32 @@ func (m model) printReport() string {
 }
 
 func buildLeaderboardTable(entries []leaderboardEntry, width, height int) table.Model {
-	const rankW, wpmW, accW = 6, 8, 10
-	sourceW := 20
-	usernameW := width - rankW - wpmW - accW - sourceW - 5 // 5 for cell padding gaps
-	if usernameW < 10 {
-		usernameW = 10
+	// Pre-render row values so we can measure them.
+	type rowVals struct{ rank, username, wpm, accuracy, source string }
+	vals := make([]rowVals, len(entries))
+	for i, e := range entries {
+		vals[i] = rowVals{
+			rank:     fmt.Sprintf("#%d", e.Rank),
+			username: e.Username,
+			wpm:      fmt.Sprintf("%.1f", e.AdjWPM),
+			accuracy: fmt.Sprintf("%.1f%%", e.Accuracy),
+			source:   e.PromptSource,
+		}
 	}
+
+	// Size each column to the widest of its header or any cell value.
+	rankW := len("Rank")
+	usernameW := len("Username")
+	wpmW := len("WPM")
+	accW := len("Accuracy")
+	for _, v := range vals {
+		rankW = max(rankW, len(v.rank))
+		usernameW = max(usernameW, len(v.username))
+		wpmW = max(wpmW, len(v.wpm))
+		accW = max(accW, len(v.accuracy))
+	}
+	// Each column has Padding(0,1) → 2 extra chars; 5 columns → 10 total.
+	sourceW := max(width-rankW-usernameW-wpmW-accW-10, len("Source"))
 
 	cols := []table.Column{
 		{Title: "Rank", Width: rankW},
@@ -377,28 +395,25 @@ func buildLeaderboardTable(entries []leaderboardEntry, width, height int) table.
 		{Title: "Source", Width: sourceW},
 	}
 
-	rows := make([]table.Row, len(entries))
-	for i, e := range entries {
-		rows[i] = table.Row{
-			fmt.Sprintf("#%d", e.Rank),
-			e.Username,
-			fmt.Sprintf("%.1f", e.AdjWPM),
-			fmt.Sprintf("%.1f%%", e.Accuracy),
-			e.PromptSource,
-		}
+	rows := make([]table.Row, len(vals))
+	for i, v := range vals {
+		rows[i] = table.Row{v.rank, v.username, v.wpm, v.accuracy, v.source}
 	}
 
 	styles := table.DefaultStyles()
 	styles.Header = styles.Header.Foreground(promptBorderColor)
 	styles.Selected = styles.Selected.Foreground(inputBorderColor)
 
-	return table.New(
+	t := table.New(
 		table.WithColumns(cols),
 		table.WithRows(rows),
+		table.WithWidth(width),
 		table.WithHeight(height),
 		table.WithFocused(true),
 		table.WithStyles(styles),
 	)
+	t.UpdateViewport()
+	return t
 }
 
 // Utility function to add title text to rendered style

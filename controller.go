@@ -16,17 +16,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 
 	case challengeReceivedMsg:
-		if msg.err != nil {
-			panic(msg.err)
+		if msg.err == nil {
+			m.sessionID = msg.sessionID
+			m.scoreToken = msg.token
+			m.tokenExpires = msg.expiresAt
 		}
-		m.sessionID = msg.sessionID
-		m.scoreToken = msg.token
-		m.tokenExpires = msg.expiresAt
 
 	case scoreSubmittedMsg:
 		m.scorePending = false
 		if msg.err != nil {
-			panic(msg.err)
+			m.scoreErr = msg.err
 		} else {
 			m.scoreResult = &msg
 			return m, leaderboardCmd(m.scoreServer, sha256Hex(m.currentPrompt))
@@ -34,11 +33,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case leaderboardFetchedMsg:
 		m.leaderboardLoading = false
-		if msg.err != nil {
-			m.leaderboardErr = msg.err
-		} else {
-			m.leaderboardEntries = msg.entries
-			m.leaderboardTable = buildLeaderboardTable(msg.entries, m.width, m.height)
+		if msg.err == nil {
+			accuracy := float64(len([]rune(m.currentPrompt))) / float64(m.totalKeypresses) * 100
+			entries := injectOwnScore(msg.entries, m.scoreResult, m.username, accuracy, m.currentSource)
+			m.leaderboardEntries = entries
+			m.leaderboardTable = buildLeaderboardTable(entries, m.width, m.height)
 		}
 
 	case promptFetchedMsg:
@@ -46,8 +45,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err == nil {
 			m.currentPrompt = msg.p.text
 			m.currentSource = msg.p.source
+			m.gutenbergID = msg.gutenbergID
 			if m.scoreServer != "" && m.username != "" {
-				return m, challengeCmd(m.scoreServer, m.username, sha256Hex(m.currentPrompt))
+				return m, challengeCmd(m.scoreServer, m.username, m.gutenbergID)
 			}
 		} else {
 			m.gutenbergFailed = true
@@ -100,6 +100,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if runes[len(runes)-1] != ' ' {
 					delete(m.mistypes, len(runes)-1)
 					m.input = string(runes[:len(runes)-1])
+					m.keypressTimes = m.keypressTimes[:len(m.keypressTimes)-1]
 				}
 			}
 			break

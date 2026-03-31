@@ -27,6 +27,9 @@ func main() {
 	if *usernameFlag != "" {
 		username = *usernameFlag
 	}
+	if runes := []rune(username); len(runes) > 20 {
+		username = string(runes[:20])
+	}
 	if *offlineMode {
 		scoreServer = ""
 	}
