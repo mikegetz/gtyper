@@ -408,7 +408,7 @@ func punctuationDensity(s string) float64 {
 	heavy := 0
 	for _, ch := range s {
 		switch ch {
-		case '"', '!', '?', ';':
+		case '"', '!', '?', ';', '\'', ',', '-':
 			heavy++
 		}
 	}
