@@ -75,6 +75,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		pos := len([]rune(m.input))
 		if pos < len(prompt) {
 			if text := msg.Key().Text; text != "" {
+				if text == " " && pos > 0 && prompt[pos-1] == ' ' {
+					break
+				}
 				if text == string(prompt[pos]) && m.typoSequence == "" {
 					m.input += text
 					m.keypressTimes = append(m.keypressTimes, time.Now())
