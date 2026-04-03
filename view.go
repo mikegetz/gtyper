@@ -29,7 +29,7 @@ var (
 	typedStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#D4A017"))
 	currentWordStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89CFF0"))
 	cursorStyle      = currentWordStyle.Underline(true)
-	errorStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#CC5555"))
+	errorStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#4f1717")).Background(lipgloss.Color("#bd6565"))
 	errorCursorStyle = errorStyle.Underline(true)
 )
 
